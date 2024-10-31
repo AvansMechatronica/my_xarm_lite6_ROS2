@@ -1,9 +1,10 @@
+sudo apt update
 sudo apt install ros-$ROS_DISTRO-moveit
-#sudo apt install ros-$ROS_DISTRO-joint-state-publisher-gui
-#sudo apt install ros-$ROS_DISTRO-combined-robot-hw
-#sudo apt install ros-$ROS_DISTRO-moveit-servo
-#sudo apt install ros-$ROS_DISTRO-moveit-visual-tools
-#sudo apt install ros-$ROS_DISTRO-ros-controllers
+sudo apt install ros-$ROS_DISTRO-joint-state-publisher-gui
+sudo apt install ros-$ROS_DISTRO-combined-robot-hw
+sudo apt install ros-$ROS_DISTRO-moveit-servo
+sudo apt install ros-$ROS_DISTRO-moveit-visual-tools
+sudo apt install ros-$ROS_DISTRO-ros-controllers
 
 git clone https://github.com/xArm-Developer/xarm_ros2.git ../../xarm_ros --recursive -b $ROS_DISTRO
 
