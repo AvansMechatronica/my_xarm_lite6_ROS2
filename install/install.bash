@@ -1,11 +1,18 @@
-sudo apt install ros-melodic-moveit
-sudo apt install ros-melodic-joint-state-publisher-gui
-sudo apt install ros-melodic-combined-robot-hw
-sudo apt install ros-melodic-moveit-servo
-sudo apt install ros-melodic-moveit-visual-tools
-sudo apt install ros-melodic-ros-controllers
+sudo apt install ros-$ROS_DISTRO-moveit
+#sudo apt install ros-$ROS_DISTRO-joint-state-publisher-gui
+#sudo apt install ros-$ROS_DISTRO-combined-robot-hw
+#sudo apt install ros-$ROS_DISTRO-moveit-servo
+#sudo apt install ros-$ROS_DISTRO-moveit-visual-tools
+#sudo apt install ros-$ROS_DISTRO-ros-controllers
 
-git clone https://github.com/xArm-Developer/xarm_ros.git ../../xarm_ros --recursive
+git clone https://github.com/xArm-Developer/xarm_ros2.git ../../xarm_ros --recursive -b $ROS_DISTRO
 
-#fuel.ignitionrobotics.org
+cd ../../xarm_ros
+git pull
+git submodule sync
+git submodule update --init --remote
+
+cd ../..
+rosdep update
+rosdep install --from-paths . --ignore-src --rosdistro $ROS_DISTRO -y
 
