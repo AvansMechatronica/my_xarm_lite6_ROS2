@@ -3,57 +3,55 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.launch_context import LaunchContext
 from ament_index_python.packages import get_package_share_directory
-from uf_ros_lib.moveit_configs_builder import MoveItConfigsBuilder
-
+from moveit_configs_utils import MoveItConfigsBuilder
+from moveit_configs_utils.launches import generate_setup_assistant_launch
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
 
-    # Load the robot configuration
-    moveit_config = (
-        MoveItConfigsBuilder(
-            controllers_name="fake_controllers",
-            ros2_control_plugin="uf_robot_hardware/UFRobotFakeSystemHardware",
-            context=LaunchContext(),
-            robot_type="xarm",
-            dof=6
-        )
-        .robot_description()
-        .trajectory_execution(file_path="config/lite6/fake_controllers.yaml")
-        .planning_scene_monitor(
-            publish_robot_description=True, publish_robot_description_semantic=True
-        )
-        .planning_pipelines(pipelines=["ompl"])
-        .to_moveit_configs()
+    moveit_config = MoveItConfigsBuilder("lite6_robot", package_name="my_lite6_moveit_config").to_moveit_configs()
+
+
+    lite6_planner_realmove_path = os.path.join(
+        get_package_share_directory('xarm_planner'),
+        'launch',
+        'lite6_planner_fake.launch.py'  # assuming converted to Python
     )
 
-    moveit_config_real_robot = (
-        MoveItConfigsBuilder(
-                    context=LaunchContext(),
-                    robot_ip="192.168.1.162",
-                    controllers_name="controllers",
-                    ros2_control_plugin="uf_robot_hardware/UFRobotSystemHardware",
-                    robot_type="xarm",
-                    dof=6,
-                )
-                .robot_description()
-                .trajectory_execution(file_path="config/lite6/controllers.yaml")
-                .planning_scene_monitor(
-                    publish_robot_description=True, publish_robot_description_semantic=True
-                )
-                .planning_pipelines(pipelines=["ompl"])
-                .to_moveit_configs()
+    lite6_planner_realmove_include = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(lite6_planner_realmove_path),
+        #launch_arguments={'sim': LaunchConfiguration('sim')}.items()
+        launch_arguments={'robot_ip': '192.168.1.162'}.items()
     )
-    run_move_group_node = Node(
-        package="moveit_ros_move_group",
-        executable="move_group",
-        output="screen",
-        parameters=[moveit_config_real_robot.to_dict()],
-        arguments=["--log-level", "debug"],
+
+    lite6_planner_fake_path = os.path.join(
+        get_package_share_directory('xarm_planner'),
+        'launch',
+        'lite6_planner_fake.launch.py'  # assuming converted to Python
+    )
+
+    lite6_planner_fake_include = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(lite6_planner_fake_path)
+    )
+
+
+    lite6_driver_path = os.path.join(
+        get_package_share_directory('xarm_api'),
+        'launch',
+        'lite6_driver.launch.py'  # assuming converted to Python
+    )
+
+    lite6_driver_include = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(lite6_driver_path),
+        #launch_arguments={'sim': LaunchConfiguration('sim')}.items()
+        launch_arguments={'robot_ip': '192.168.1.162'}.items()
     )
 
     # RViz
     rviz_config_file = (
-        get_package_share_directory("xarm_moveit_config") + "/rviz/moveit.rviz"
+        get_package_share_directory("my_lite6_bringup") + "/rviz/moveit.rviz"
     )
 
     rviz_node = Node(
@@ -71,66 +69,10 @@ def generate_launch_description():
         ],
     )
 
-    # Static TF
-    static_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        name="static_transform_publisher",
-        output="log",
-        arguments=["--frame-id", "world", "--child-frame-id", "base_link"],
-    )
-
-    # Publish TF
-    robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        output="both",
-        parameters=[moveit_config.robot_description],
-    )
-
-    # ros2_control using FakeSystem as hardware
-    ros2_controllers_path = os.path.join(
-        get_package_share_directory("xarm_controller"),
-        "config",
-        "lite6_controllers.yaml",
-    )
-
-
-    ros2_control_node = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[ros2_controllers_path],
-        remappings=[
-            ("/controller_manager/robot_description", "/robot_description"),
-        ],
-        output="both",
-    )
-
-    joint_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "joint_state_broadcaster",
-            "--controller-manager",
-            "/controller_manager",
-        ],
-    )
-
-    arm_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["lite6_traj_controller", "-c", "/controller_manager"],
-    )
-
     return LaunchDescription(
         [
+#            lite6_planner_fake_include,
+            lite6_driver_include,
             rviz_node,
-            static_tf,
-            robot_state_publisher,
-            run_move_group_node,
-            ros2_control_node,
-            joint_state_broadcaster_spawner,
-            arm_controller_spawner,
         ]
     )
