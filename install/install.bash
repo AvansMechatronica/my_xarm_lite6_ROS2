@@ -6,8 +6,8 @@ sudo apt install ros-$ROS_DISTRO-moveit-servo
 sudo apt install ros-$ROS_DISTRO-moveit-visual-tools
 sudo apt install ros-$ROS_DISTRO-ros-controllers
 
-git clone https://github.com/xArm-Developer/xarm_ros2.git ../../xarm_ros --recursive 
-git clone https://github.com/ros-planning/moveit_task_constructor.git ../../moveit_task_constructor -b $ROS_DISTRO
+git clone https://github.com/xArm-Developer/xarm_ros2.git ../../xarm_ros -b $ROS_DISTRO --recursive 
+#git clone https://github.com/ros-planning/moveit_task_constructor.git ../../moveit_task_constructor -b $ROS_DISTRO
 
 cd ../../xarm_ros
 git pull
