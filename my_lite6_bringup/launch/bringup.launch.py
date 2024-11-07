@@ -13,14 +13,15 @@ from launch_ros.substitutions import FindPackageShare
 def launch_setup(context, *args, **kwargs):
 
     ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)
+    #ros_namespace = LaunchConfiguration('ros_namespace', default='ufactory').perform(context)
     xarm_type = ''
 
     robot_ip = LaunchConfiguration('robot_ip', default='192.168.1.162')
     report_type = LaunchConfiguration('report_type', default='normal')
     
     prefix = LaunchConfiguration('prefix', default='')
-    #hw_ns = LaunchConfiguration('hw_ns', default='ufactory')
     hw_ns = LaunchConfiguration('hw_ns', default='')
+    #hw_ns = LaunchConfiguration('hw_ns', default='ufactory')
     limited = LaunchConfiguration('limited', default=False)
     effort_control = LaunchConfiguration('effort_control', default=False)
     velocity_control = LaunchConfiguration('velocity_control', default=False)
@@ -182,10 +183,8 @@ def launch_setup(context, *args, **kwargs):
 
 
     controllers = [
-#        '{}{}traj_controller'.format(prefix.perform(context), xarm_type),
-#        'joint_trajectory_controller/JointTrajectoryController',
+#         '{}{}_traj_controller'.format(prefix.perform(context), xarm_type),
         'lite6_traj_controller',
-#        'uf_robot_hardware/UFRobotFakeSystemHardware'
     ]
 
     # Load controllers
@@ -195,6 +194,9 @@ def launch_setup(context, *args, **kwargs):
             package='controller_manager',
             executable='spawner',
             output='screen',
+            remappings=[
+                ('/follow_joint_trajectory', '/lite6_traj_controller/follow_joint_trajectory')
+            ],
             arguments=[
                 controller,
                 '--controller-manager', '{}/controller_manager'.format(ros_namespace)
