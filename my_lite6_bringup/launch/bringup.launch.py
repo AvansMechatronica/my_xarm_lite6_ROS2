@@ -19,7 +19,8 @@ def launch_setup(context, *args, **kwargs):
     report_type = LaunchConfiguration('report_type', default='normal')
     
     prefix = LaunchConfiguration('prefix', default='')
-    hw_ns = LaunchConfiguration('hw_ns', default='ufactory')
+    #hw_ns = LaunchConfiguration('hw_ns', default='ufactory')
+    hw_ns = LaunchConfiguration('hw_ns', default='')
     limited = LaunchConfiguration('limited', default=False)
     effort_control = LaunchConfiguration('effort_control', default=False)
     velocity_control = LaunchConfiguration('velocity_control', default=False)
@@ -181,7 +182,10 @@ def launch_setup(context, *args, **kwargs):
 
 
     controllers = [
-        '{}{}traj_controller'.format(prefix.perform(context), xarm_type),
+#        '{}{}traj_controller'.format(prefix.perform(context), xarm_type),
+#        'joint_trajectory_controller/JointTrajectoryController',
+        'lite6_traj_controller',
+#        'uf_robot_hardware/UFRobotFakeSystemHardware'
     ]
 
     # Load controllers
