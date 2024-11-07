@@ -6,34 +6,14 @@ from ament_index_python.packages import get_package_share_directory
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launches import generate_setup_assistant_launch
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
-def generate_launch_description():
+def launch_setup(context, *args, **kwargs):
 
-    moveit_config = MoveItConfigsBuilder("lite6_robot", package_name="my_lite6_moveit_config").to_moveit_configs()
-
-    if 0:
-        lite6_planner_realmove_path = os.path.join(
-            get_package_share_directory('xarm_planner'),
-            'launch',
-            'lite6_planner_fake.launch.py'  # assuming converted to Python
-        )
-        lite6_planner_realmove_include = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(lite6_planner_realmove_path),
-            #launch_arguments={'robot_ip': LaunchConfiguration('robot_ip')}.items()
-            launch_arguments={'robot_ip': '192.168.1.162'}.items()
-        )
-
-        lite6_planner_fake_path = os.path.join(
-            get_package_share_directory('xarm_planner'),
-            'launch',
-            'lite6_planner_fake.launch.py'  # assuming converted to Python
-        )
-        lite6_planner_fake_include = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(lite6_planner_fake_path)
-        )
+    ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)
+    xarm_type = ''
 
     robot_ip = LaunchConfiguration('robot_ip', default='192.168.1.162')
     report_type = LaunchConfiguration('report_type', default='normal')
@@ -64,6 +44,33 @@ def generate_launch_description():
     ros2_control_plugin = LaunchConfiguration('ros2_control_plugin', default='uf_robot_hardware/UFRobotSystemHardware')
     ros2_control_plugin = LaunchConfiguration('ros2_control_plugin', default='uf_robot_hardware/UFRobotFakeSystemHardware')
 
+
+    #def generate_launch_description():
+
+    moveit_config = MoveItConfigsBuilder("lite6_robot", package_name="my_lite6_moveit_config").to_moveit_configs()
+
+    if 0:
+        lite6_planner_realmove_path = os.path.join(
+            get_package_share_directory('xarm_planner'),
+            'launch',
+            'lite6_planner_fake.launch.py'  # assuming converted to Python
+        )
+        lite6_planner_realmove_include = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(lite6_planner_realmove_path),
+            #launch_arguments={'robot_ip': LaunchConfiguration('robot_ip')}.items()
+            launch_arguments={'robot_ip': '192.168.1.162'}.items()
+        )
+
+        lite6_planner_fake_path = os.path.join(
+            get_package_share_directory('xarm_planner'),
+            'launch',
+            'lite6_planner_fake.launch.py'  # assuming converted to Python
+        )
+        lite6_planner_fake_include = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(lite6_planner_fake_path)
+        )
+
+
     xacro_file = LaunchConfiguration('xacro_file', default=PathJoinSubstitution([FindPackageShare('xarm_description'), 'urdf', 'xarm_device.urdf.xacro']))
 
     # robot ros2 control launch
@@ -74,7 +81,7 @@ def generate_launch_description():
             'robot_ip': robot_ip,
 #            'report_type': report_type,
 #            'prefix': prefix,
-#            'hw_ns': hw_ns,
+            'hw_ns': hw_ns,
 #            'limited': limited,
 #            'effort_control': effort_control,
 #            'velocity_control': velocity_control,
@@ -161,8 +168,38 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription(
-        [
+
+    joint_state_broadcaster = Node(
+        package='controller_manager',
+        executable='spawner',
+        output='screen',
+        arguments=[
+            'joint_state_broadcaster',
+            '--controller-manager', '{}/controller_manager'.format(ros_namespace)
+        ],
+    )
+
+
+    controllers = [
+        '{}{}traj_controller'.format(prefix.perform(context), xarm_type),
+    ]
+
+    # Load controllers
+    controller_nodes = []
+    for controller in controllers:
+        controller_nodes.append(Node(
+            package='controller_manager',
+            executable='spawner',
+            output='screen',
+            arguments=[
+                controller,
+                '--controller-manager', '{}/controller_manager'.format(ros_namespace)
+            ],
+        ))
+
+
+
+    return[
             #lite6_planner_fake_include,
             #lite6_driver_include,
             robot_ros2_control_launch,
@@ -170,5 +207,10 @@ def generate_launch_description():
             move_group_include,
             #moveit_rviz_include,
             rviz_node,
-        ]
-    )
+        ] + controller_nodes
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        OpaqueFunction(function=launch_setup)
+    ])
