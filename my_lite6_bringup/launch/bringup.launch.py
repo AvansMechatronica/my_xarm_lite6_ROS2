@@ -72,7 +72,6 @@ def launch_setup(context, *args, **kwargs):
             PythonLaunchDescriptionSource(lite6_planner_fake_path)
         )
 
-
     xacro_file = LaunchConfiguration('xacro_file', default=PathJoinSubstitution([FindPackageShare('xarm_description'), 'urdf', 'xarm_device.urdf.xacro']))
 
     # robot ros2 control launch
@@ -195,7 +194,7 @@ def launch_setup(context, *args, **kwargs):
             executable='spawner',
             output='screen',
             remappings=[
-                ('/follow_joint_trajectory', '/lite6_traj_controller/follow_joint_trajectory')
+                ('follow_joint_trajectory', '/arm_controller/follow_joint_trajectory')
             ],
             arguments=[
                 controller,
@@ -213,7 +212,7 @@ def launch_setup(context, *args, **kwargs):
             move_group_include,
             #moveit_rviz_include,
             rviz_node,
-        ] + controller_nodes
+        ]  + controller_nodes
 
 
 def generate_launch_description():
