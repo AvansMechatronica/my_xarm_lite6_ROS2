@@ -13,7 +13,7 @@ from launch.substitutions import Command
 
 def launch_setup(context, *args, **kwargs):
 
-    ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)
+    ros_namespace = LaunchConfiguration('ros_namespace', default='lite6').perform(context)
     #ros_namespace = LaunchConfiguration('ros_namespace', default='ufactory').perform(context)
     xarm_type = ''
 
