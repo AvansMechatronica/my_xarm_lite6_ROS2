@@ -5,6 +5,8 @@ sudo apt -y install ros-$ROS_DISTRO-combined-robot-hw
 sudo apt -y install ros-$ROS_DISTRO-moveit-servo
 sudo apt -y install ros-$ROS_DISTRO-moveit-visual-tools
 sudo apt -y install ros-$ROS_DISTRO-ros-controllers
+sudo apt -y install ros-$ROS_DISTRO-controller-manager
+sudo apt -y install ros-$ROS_DISTRO-controller-manager-msgs
 
 git clone https://github.com/xArm-Developer/xarm_ros2.git ../../xarm_ros -b $ROS_DISTRO --recursive 
 #git clone https://github.com/ros-planning/moveit_task_constructor.git ../../moveit_task_constructor -b $ROS_DISTRO
