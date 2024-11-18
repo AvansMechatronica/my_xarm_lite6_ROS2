@@ -44,7 +44,7 @@ def launch_setup(context, *args, **kwargs):
     geometry_mesh_tcp_xyz = LaunchConfiguration('geometry_mesh_tcp_xyz', default='"0 0 0"')
     geometry_mesh_tcp_rpy = LaunchConfiguration('geometry_mesh_tcp_rpy', default='"0 0 0"')
     
-    ros2_control_plugin = LaunchConfiguration('ros2_control_plugin', default='uf_robot_hardware/UFRobotFakeSystemHardware')
+    ros2_control_plugin = LaunchConfiguration('ros2_control_plugin', default='uf_robot_hardware/UFRobotSystemHardware')
 
 
     #def generate_launch_description():
@@ -162,10 +162,12 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{'robot_description': robot_description}]
     )
 
+
+
     return[
             robot_ros2_control_launch,
-            #robot_state_publisher_node,
-            joint_state_broadcaster,
+            robot_state_publisher_node,
+            #joint_state_broadcaster,
             move_group_include,
             rviz_node,
         ]  + controller_nodes
