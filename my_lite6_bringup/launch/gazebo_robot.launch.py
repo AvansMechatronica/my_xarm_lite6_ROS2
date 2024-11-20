@@ -14,37 +14,37 @@ from launch.actions import OpaqueFunction, IncludeLaunchDescription, DeclareLaun
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.actions import Node
 from uf_ros_lib.moveit_configs_builder import MoveItConfigsBuilder
 from uf_ros_lib.uf_robot_utils import generate_ros2_control_params_temp_file
 
 
 def launch_setup(context, *args, **kwargs):
-    robot_ip = LaunchConfiguration('robot_ip', default='192.168.1.162')
     dof = LaunchConfiguration('dof', default=6)
     robot_type = LaunchConfiguration('robot_type', default='lite')
     prefix = LaunchConfiguration('prefix', default='')
     hw_ns = LaunchConfiguration('hw_ns', default='xarm')
     limited = LaunchConfiguration('limited', default=True)
     attach_to = LaunchConfiguration('attach_to', default='xarm_link')
-    attach_xyz = LaunchConfiguration('attach_xyz', default='"0 0 0"')
+    attach_xyz = LaunchConfiguration('attach_xyz', default='"0 0 0.0"')
     attach_rpy = LaunchConfiguration('attach_rpy', default='"0 0 0"')
-   
+
     add_gripper = LaunchConfiguration('add_gripper', default=False)
     add_vacuum_gripper = LaunchConfiguration('add_vacuum_gripper', default=False)
     add_bio_gripper = LaunchConfiguration('add_bio_gripper', default=False)
-    
+
     ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)
 
-    ros2_control_plugin = 'uf_robot_hardware/UFRobotSystemHardware'
-    xarm_type = '{}{}'.format(robot_type.perform(context), dof.perform(context) if robot_type.perform(context) in ('xarm', 'lite') else '')
-    
+    ros2_control_plugin = 'gazebo_ros2_control/GazeboSystem'
+    controllers_name = 'fake_controllers'
+
     ros2_control_params = generate_ros2_control_params_temp_file(
         os.path.join(get_package_share_directory('my_lite6_moveit_config'), 'config', 'ros2_controllers.yaml'),
         prefix=prefix.perform(context), 
         add_gripper=add_gripper.perform(context) in ('True', 'true'),
         add_bio_gripper=add_bio_gripper.perform(context) in ('True', 'true'),
         ros_namespace=ros_namespace,
+        update_rate=1000,
+        use_sim_time=True,
         robot_type=robot_type.perform(context)
     )
 
@@ -60,7 +60,6 @@ def launch_setup(context, *args, **kwargs):
     moveit_config = (
         MoveItConfigsBuilder(
             context=context,
-            robot_ip=robot_ip,
             dof=dof,
             robot_type=robot_type,
             prefix=prefix,
@@ -83,15 +82,8 @@ def launch_setup(context, *args, **kwargs):
         .planning_pipelines(config_folder=pipeline_filedir)
         .to_moveit_configs()
     )
-    
-    # robot description launch
-    # xarm_description/launch/_robot_description.launch.py
-    robot_description_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(PathJoinSubstitution([FindPackageShare('xarm_description'), 'launch', '_robot_description.launch.py'])),
-        launch_arguments={
-            'robot_description': yaml.dump(moveit_config.robot_description),
-        }.items(),
-    )
+
+    moveit_config_dump = yaml.dump(moveit_config.to_dict())
 
     # robot moveit common launch
     # xarm_moveit_config/launch/_robot_moveit_common2.launch.py
@@ -102,67 +94,31 @@ def launch_setup(context, *args, **kwargs):
             'attach_to': attach_to,
             'attach_xyz': attach_xyz,
             'attach_rpy': attach_rpy,
-            'use_sim_time': 'false',
-            'moveit_config_dump': yaml.dump(moveit_config.to_dict()),
+            'show_rviz': 'false',
+            'use_sim_time': 'true',
+            'moveit_config_dump': moveit_config_dump,
             'rviz_config': PathJoinSubstitution([FindPackageShare('my_lite6_bringup'), 'rviz', 'moveit.rviz'])
         }.items(),
     )
 
-    # joint state publisher node
-    joint_state_publisher_node = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        name='joint_state_publisher',
-        output='screen',
-        parameters=[{'source_list': ['{}{}/joint_states'.format(prefix.perform(context), hw_ns.perform(context))]}],
-        remappings=[
-            ('follow_joint_trajectory', '{}{}_traj_controller/follow_joint_trajectory'.format(prefix.perform(context), xarm_type)),
-        ],
-    )
-
-    # ros2 control launch
-    # xarm_controller/launch/_ros2_control.launch.py
-    ros2_control_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(PathJoinSubstitution([FindPackageShare('xarm_controller'), 'launch', '_ros2_control.launch.py'])),
+    # robot gazebo launch
+    # mbot_demo/launch/_robot_on_mbot_gazebo.launch.py
+    robot_gazebo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(PathJoinSubstitution([FindPackageShare('my_lite6_bringup'), 'launch', '_gazebo.launch.py'])),
         launch_arguments={
-            'robot_description': yaml.dump(moveit_config.robot_description),
-            'ros2_control_params': ros2_control_params,
+            'dof': dof,
+            'robot_type': robot_type,
+            'prefix': prefix,
+            'moveit_config_dump': moveit_config_dump,
+            'show_rviz': 'true',
+            'rviz_config': PathJoinSubstitution([FindPackageShare('my_lite6_bringup'), 'rviz', 'moveit.rviz'])
         }.items(),
     )
 
-    controllers = [
-        '{}{}_traj_controller'.format(prefix.perform(context), xarm_type),
-        'mbot_traj_controller'
-    ]
-    # Load controllers
-    controller_nodes = []
-    for controller in controllers:
-        controller_nodes.append(Node(
-            package='controller_manager',
-            executable='spawner',
-            output='screen',
-            arguments=[
-                controller,
-                '--controller-manager', '{}/controller_manager'.format(ros_namespace)
-            ],
-        ))
-
-    # control_node = Node(
-    #     package='controller_manager',
-    #     executable='spawner',
-    #     output='screen',
-    #     arguments=[
-    #         '{}{}_traj_controller'.format(prefix.perform(context), xarm_type),
-    #         '--controller-manager', '{}/controller_manager'.format(ros_namespace)
-    #     ],
-    # )
-
     return [
-        robot_description_launch,
+        robot_gazebo_launch,
         robot_moveit_common_launch,
-        joint_state_publisher_node,
-        ros2_control_launch,
-    ] + controller_nodes
+    ]
 
 
 def generate_launch_description():
