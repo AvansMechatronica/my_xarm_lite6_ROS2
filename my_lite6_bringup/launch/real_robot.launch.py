@@ -132,7 +132,6 @@ def launch_setup(context, *args, **kwargs):
 
     controllers = [
         '{}{}_traj_controller'.format(prefix.perform(context), xarm_type),
-        'mbot_traj_controller'
     ]
     # Load controllers
     controller_nodes = []

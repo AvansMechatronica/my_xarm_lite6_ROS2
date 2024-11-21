@@ -25,8 +25,8 @@ def launch_setup(context, *args, **kwargs):
     prefix = LaunchConfiguration('prefix', default='')
     add_gripper = LaunchConfiguration('add_gripper', default=False)
     add_bio_gripper = LaunchConfiguration('add_bio_gripper', default=False)
-    dof = LaunchConfiguration('dof', default=7)
-    robot_type = LaunchConfiguration('robot_type', default='xarm')
+    dof = LaunchConfiguration('dof', default=6)
+    robot_type = LaunchConfiguration('robot_type', default='lite6')
     show_rviz = LaunchConfiguration('show_rviz', default=False)
 
     ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)
@@ -71,7 +71,7 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
         arguments=[
             '-topic', 'robot_description',
-            '-entity', 'mbot_with_xarm',
+            '-entity', 'xarm',
         ],
         parameters=[{'use_sim_time': True}],
     )
@@ -108,7 +108,6 @@ def launch_setup(context, *args, **kwargs):
     controllers = [
         'joint_state_broadcaster',
         '{}{}_traj_controller'.format(prefix.perform(context), xarm_type),
-        'mbot_traj_controller'
     ]
     if robot_type.perform(context) != 'lite' and add_gripper.perform(context) in ('True', 'true'):
         controllers.append('{}{}_gripper_traj_controller'.format(prefix.perform(context), robot_type.perform(context)))

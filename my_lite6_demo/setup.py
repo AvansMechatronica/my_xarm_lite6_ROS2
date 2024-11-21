@@ -24,7 +24,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
             'console_scripts': [
-                'demo = demo.demo:main',
+                'demo = my_lite6_demo.demo:main',
         ],
     },
 )
