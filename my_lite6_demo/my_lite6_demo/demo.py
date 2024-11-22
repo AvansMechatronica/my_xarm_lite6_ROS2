@@ -87,13 +87,14 @@ class MovegroupHelper:
         self.moveit2.planner_id = (
             "RRTConnectkConfigDefault"
         )
+
         # Scale down velocity and acceleration of joints (percentage of maximum)
         self.moveit2.max_velocity = 0.5
         self.moveit2.max_acceleration = 0.5
         self.synchronous = True
         self.cancel_after_secs = 0.0
 
-        self.cartesian = False
+        self.cartesian = True
         self.cartesian_max_step = 0.0025
         self.cartesian_fraction_threshold = 0.0
         self.cartesian_jump_threshold = 0.0
@@ -193,14 +194,14 @@ def main():
     executor_thread.start()
     node.create_rate(1.0).sleep()
 
-    if 1:
-        for joint_state in joint_states:
-            # Move to joint configuration
-            result, joint_values = lite6.get_joint_values(joint_state)
-            if result:
-                move_group_helper.joint_goal(joint_values)
 
-    move_group_helper.pose_goal([0.5, 0.0, 0.25], [1.0, 0.0, 0.0, 0.0])
+    for joint_state in joint_states:
+        # Move to joint configuration
+        result, joint_values = lite6.get_joint_values(joint_state)
+        if result:
+            move_group_helper.joint_goal(joint_values)
+
+    move_group_helper.pose_goal([0.5, 0.1, 0.25], [1.0, 0.0, 0.0, 0.0])
 
     rclpy.shutdown()
     executor_thread.join()
