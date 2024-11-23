@@ -5,16 +5,14 @@ import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 
-from pymoveit2 import MoveIt2, MoveIt2State
 #from ament_index_python.packages import get_package_share_directory
 import xml.etree.ElementTree as ET
 
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from my_moveit_python import srdfJointValues
+from my_moveit_python import srdfGroupStates
 from my_moveit_python import MovegroupHelper
-
 
 prefix = ''
 joint_names = [
@@ -41,7 +39,7 @@ def main():
     node.tf_buffer = Buffer()
     node.tf_listener = TransformListener(node.tf_buffer, node)
 
-    lite6 = srdfJointValues(package_name, srdf_file_name, group_name)
+    lite6_groupstates = srdfGroupStates(package_name, srdf_file_name, group_name)
     move_group_helper = MovegroupHelper(node, joint_names, base_link_name, end_effector_name, group_name)
 
     # Spin the node in background thread(s) and wait a bit for initialization
@@ -54,10 +52,10 @@ def main():
 
     for joint_state in joint_states:
         # Move to joint configuration
-        result, joint_values = lite6.get_joint_values(joint_state)
+        result, joint_values = lite6_groupstates.get_joint_values(joint_state)
         if result:
             print("Move to " + joint_state)
-            move_group_helper.joint_goal(joint_values)
+            move_group_helper.move_to_configuration(joint_values)
         else:
             print( "Failed to get joint_values of " + joint_state)
 
@@ -65,7 +63,7 @@ def main():
     print("Move to fixed pose")
     translation = [0.5, 0.1, 0.25]
     rotation = [1.0, 0.0, 0.0, 0.0]
-    move_group_helper.pose_goal(translation, rotation)
+    move_group_helper.move_to_pose(translation, rotation)
 
 
     print("Move to published fransfer frame")
@@ -87,19 +85,30 @@ def main():
         rotation[1] = t.transform.rotation.x
         rotation[2] = t.transform.rotation.y
         rotation[3] = t.transform.rotation.z
-        move_group_helper.pose_goal(translation, rotation)
+        move_group_helper.move_to_pose(translation, rotation)
 
     except TransformException as ex:
         node.get_logger().info(
             f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
     
-    result, joint_values = lite6.get_joint_values('home')
+    result, joint_values = lite6_groupstates.get_joint_values('home')
     if result:
         print("Move to home")
-        move_group_helper.joint_goal(joint_values)
+        move_group_helper.move_to_configuration(joint_values)
     else:
         print( "Failed to get joint_values of home")
 
+    if 0:
+        # testing
+        result, joint_values = lite6_groupstates.get_joint_values('home')
+        if result:
+            move_group_helper.compute_fk(joint_values)
+
+        translation = [0.5, 0.1, 0.25]
+        rotation = [1.0, 0.0, 0.0, 0.0]
+        move_group_helper.compute_ik(translation, rotation)
+
+        move_group_helper.move_servo()
 
     rclpy.shutdown()
     executor_thread.join()
