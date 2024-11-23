@@ -156,11 +156,21 @@ def launch_setup(context, *args, **kwargs):
     #     ],
     # )
 
+    static_traansfer_frame = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_traansfer_frame',
+        output='screen',
+        arguments=['-0.025', '0.10', '0.05', '0.0', '0.0', '0.0', 'world', 'test_transfer_frame'],
+    )
+
+
     return [
         robot_description_launch,
         robot_moveit_common_launch,
         joint_state_publisher_node,
         ros2_control_launch,
+        static_traansfer_frame,
     ] + controller_nodes
 
 
