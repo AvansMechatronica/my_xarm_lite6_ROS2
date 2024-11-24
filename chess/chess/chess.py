@@ -4,8 +4,38 @@ from rclpy.node import Node
 import subprocess
 from std_msgs.msg import String
 
+from my_moveit_python import srdfGroupStates
+from my_moveit_python import MovegroupHelper
+
+from threading import Thread
+
+prefix = ''
+joint_names = [
+        prefix + "joint1",
+        prefix + "joint2",
+        prefix + "joint3",
+        prefix + "joint4",
+        prefix + "joint5",
+        prefix + "joint6",
+    ]
+base_link_name = "link_base"
+end_effector_name = "link6"
+group_name = "lite6"
+package_name = 'my_lite6_moveit_config'
+srdf_file_name = 'config/lite6_robot.srdf'
+
+
+
+board_center = [0.285, 0.0]
+field_size = 0.03
+half_board_size = (field_size * 8) / 2
+
+pre_grasp_height = 0.1
+drop_height = 0.03
+
 class ChessNode(Node):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         super().__init__('chess_node')
         self.get_logger().info('Chess node started')
 
@@ -15,11 +45,29 @@ class ChessNode(Node):
         )  # Publish to the topic `chess_best_move`
 
         # Timer to control the loop
-        self.timer = self.create_timer(2.0, self.timer_callback)
+        self.timer = self.create_timer(10.0, self.timer_callback)
 
         # Start Stockfish subprocess once and reuse
         self.stockfish_process = self.start_stockfish_process()
         self.current_position = 'startpos'
+        self.move_group_helper = MovegroupHelper(self.node, joint_names, base_link_name, end_effector_name, group_name)
+        self.lite6_groupstates = srdfGroupStates(package_name, srdf_file_name, group_name)
+
+        # Spin the node in background thread(s) and wait a bit for initialization
+        executor = rclpy.executors.MultiThreadedExecutor(2)
+        executor.add_node(node)
+        executor_thread = Thread(target=executor.spin, daemon=True, args=())
+        executor_thread.start()
+        node.create_rate(1.0).sleep()
+
+        
+        result, joint_values = self.lite6_groupstates.get_joint_values('home')
+        if result:
+            print("Move to home")
+            self.move_group_helper.move_to_configuration(joint_values)
+        else:
+            print( "Failed to get joint_values of home")
+        print("Open gripper")
 
     def start_stockfish_process(self):
         """Start Stockfish as a persistent subprocess."""
@@ -41,11 +89,36 @@ class ChessNode(Node):
     def timer_callback(self):
         """ROS 2 timer callback to compute and publish the best move."""
         best_move = self.get_best_move(self.current_position)
+        translation_start = [0.5, 0.1, 0.1]
+        rotation_start = [1.0, 0.0, 0.0, 0.0]
+        translation_end = [0.5, 0.1, 0.1]
+        rotation_end = [1.0, 0.0, 0.0, 0.0]
         if best_move:
             start_position = best_move[:2]
             end_position = best_move[2:]
             self.get_logger().info(f'Best move: From {start_position} To {end_position}')
             self.current_position += f' {best_move}'
+
+            translation_start[0] = board_center[0] - ((int(start_position[1]) * field_size) - half_board_size)
+            translation_start[1] = board_center[1] + (((ord(start_position[0]) - 97) * field_size) - half_board_size)
+            translation_start[2] = pre_grasp_height
+            self.move_group_helper.move_to_pose(translation_start, rotation_start)
+            translation_start[2] = drop_height
+            self.move_group_helper.move_to_pose(translation_start, rotation_start)
+            print("Close gripper")
+            translation_start[2] = pre_grasp_height
+            self.move_group_helper.move_to_pose(translation_start, rotation_start)
+
+            translation_end[0] = board_center[0] - ((int(end_position[1]) * field_size) - half_board_size)
+            translation_end[1] = board_center[1] + (((ord(end_position[0]) - 97) * field_size) - half_board_size)
+            translation_end[2] = pre_grasp_height
+            self.move_group_helper.move_to_pose(translation_end, rotation_end)
+            translation_end[2] = drop_height
+            self.move_group_helper.move_to_pose(translation_end, rotation_end)
+            print("Open gripper")
+            translation_end[2] = pre_grasp_height
+            self.move_group_helper.move_to_pose(translation_end, rotation_end)
+
 
             msg = String();
             msg.data = f'{start_position}->{end_position}'
@@ -82,7 +155,8 @@ class ChessNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    chess_node = ChessNode()
+    node = Node("demo")
+    chess_node = ChessNode(node)
     try:
         rclpy.spin(chess_node)
     except KeyboardInterrupt:
