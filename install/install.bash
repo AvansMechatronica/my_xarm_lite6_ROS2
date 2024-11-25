@@ -27,7 +27,7 @@ if ros2 pkg list | grep -q "pymoveit2"; then
     echo "pymoveit2 packages alredy installed"
 else
     echo "cloning xarm pymoveit2"
-    git clone https://github.com/AndrejOrsula/pymoveit2.git ../../pymoveit2 
+    git clone https://github.com/AvansMechatronica/pymoveit2.git ../../pymoveit2 
 fi
 
 if ros2 pkg list | grep -q "my_moveit_python"; then
