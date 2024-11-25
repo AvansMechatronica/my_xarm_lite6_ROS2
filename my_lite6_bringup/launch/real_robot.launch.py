@@ -31,7 +31,7 @@ def launch_setup(context, *args, **kwargs):
     attach_rpy = LaunchConfiguration('attach_rpy', default='"0 0 0"')
    
     add_gripper = LaunchConfiguration('add_gripper', default=False)
-    add_vacuum_gripper = LaunchConfiguration('add_vacuum_gripper', default=False)
+    add_vacuum_gripper = LaunchConfiguration('add_vacuum_gripper', default=True)
     add_bio_gripper = LaunchConfiguration('add_bio_gripper', default=False)
     
     ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)

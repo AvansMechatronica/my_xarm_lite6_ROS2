@@ -7,6 +7,8 @@ from std_msgs.msg import String
 from my_moveit_python import srdfGroupStates
 from my_moveit_python import MovegroupHelper
 
+from xarm_msgs.srv import VacuumGripperCtrl
+
 from threading import Thread
 
 prefix = ''
@@ -25,19 +27,46 @@ package_name = 'my_lite6_moveit_config'
 srdf_file_name = 'config/lite6_robot.srdf'
 
 
-
 board_center = [0.285, 0.0]
+
 field_size = 0.03
+half_field_size = field_size / 2
 half_board_size = (field_size * 8) / 2
 
-pre_grasp_height = 0.1
-drop_height = 0.03
+board_a1 =[0, 0]
+board_a1[0] = board_center[0] + half_board_size + field_size
+board_a1[1] = board_center[1] - half_board_size + field_size
+
+
+pre_grasp_height = 0.2
+drop_height = 0.1
+
+class VacuumGripperClient(Node):
+    def __init__(self):
+        super().__init__('vacuum_gripper_client')
+        self.client = self.create_client(VacuumGripperCtrl, '/xarm/set_vacuum_gripper')
+        while not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+        self.get_logger().info('Service is available.')
+
+    def send_request(self, on_state):
+        request = VacuumGripperCtrl.Request()
+        request.on = on_state
+        self.future = self.client.call_async(request)
+        return self.future
+    
+    def open(self):
+        self.send_request(True)
+    def close(self):
+        self.send_request(False)
 
 class ChessNode(Node):
     def __init__(self, node):
         self.node = node
         super().__init__('chess_node')
         self.get_logger().info('Chess node started')
+
+        self.gripper = VacuumGripperClient();
 
         # ROS 2 publisher for the best move
         self.publisher_ = self.create_publisher(
@@ -68,6 +97,7 @@ class ChessNode(Node):
         else:
             print( "Failed to get joint_values of home")
         print("Open gripper")
+        self.gripper.open();
 
     def start_stockfish_process(self):
         """Start Stockfish as a persistent subprocess."""
@@ -99,23 +129,24 @@ class ChessNode(Node):
             self.get_logger().info(f'Best move: From {start_position} To {end_position}')
             self.current_position += f' {best_move}'
 
-            translation_start[0] = board_center[0] - ((int(start_position[1]) * field_size) - half_board_size)
-            translation_start[1] = board_center[1] + (((ord(start_position[0]) - 97) * field_size) - half_board_size)
+            translation_start[0] = board_a1[0] - (int(start_position[1]) * field_size)
+            translation_start[1] = board_a1[1] + ((ord(start_position[0]) - 97) * field_size)
             translation_start[2] = pre_grasp_height
             self.move_group_helper.move_to_pose(translation_start, rotation_start)
             translation_start[2] = drop_height
             self.move_group_helper.move_to_pose(translation_start, rotation_start)
-            print("Close gripper")
+            self.gripper.close()
             translation_start[2] = pre_grasp_height
             self.move_group_helper.move_to_pose(translation_start, rotation_start)
 
-            translation_end[0] = board_center[0] - ((int(end_position[1]) * field_size) - half_board_size)
-            translation_end[1] = board_center[1] + (((ord(end_position[0]) - 97) * field_size) - half_board_size)
+            translation_end[0] = board_a1[0] - (int(end_position[1]) * field_size)
+            translation_end[1] = board_a1[1] + ((ord(end_position[0]) - 97) * field_size)
             translation_end[2] = pre_grasp_height
             self.move_group_helper.move_to_pose(translation_end, rotation_end)
             translation_end[2] = drop_height
             self.move_group_helper.move_to_pose(translation_end, rotation_end)
             print("Open gripper")
+            self.gripper.open()
             translation_end[2] = pre_grasp_height
             self.move_group_helper.move_to_pose(translation_end, rotation_end)
 

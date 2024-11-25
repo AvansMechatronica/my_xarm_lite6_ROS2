@@ -21,6 +21,7 @@ else
     git pull
     git submodule sync
     git submodule update --init --remote
+    cp ../my_lite6_driver_config/xarm_user_params.yaml ../../xarm_ros/xarm_api/config/
 fi
 
 if ros2 pkg list | grep -q "pymoveit2"; then

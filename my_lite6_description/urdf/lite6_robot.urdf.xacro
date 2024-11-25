@@ -11,7 +11,7 @@
   <xacro:arg name="effort_control" default="false"/>
   <xacro:arg name="velocity_control" default="false"/>
   <xacro:arg name="add_gripper" default="false"/>
-  <xacro:arg name="add_vacuum_gripper" default="false"/>
+  <xacro:arg name="add_vacuum_gripper" default="true"/>
   <xacro:arg name="model1300" default="false"/>
   
   <xacro:arg name="dof" default="6"/>
