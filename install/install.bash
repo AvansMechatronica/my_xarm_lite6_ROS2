@@ -39,6 +39,32 @@ else
 fi
 
 
+if ros2 pkg list | grep -q "flexbe_behavior_engine"; then
+    echo "flexbe_behavior_engine packages alredy installed"
+else
+    echo "cloning flexbe_behavior_engine"
+    git clone https://github.com/FlexBE/flexbe_behavior_engine.git -b humble ../../flexbe_behavior_engine
+fi
+
+if ros2 pkg list | grep -q "flexbe_app"; then
+    echo "flexbe_app packages alredy installed"
+else
+    echo "cloning flexbe_app"
+    git clone https://github.com/FlexBE/flexbe_app.git -b humble ../../flexbe_app 
+fi
+
+
+if ros2 pkg list | grep -q "flexbe_manipulation_states"; then
+    echo "generic_flexbe_states packages alredy installed"
+else
+    echo "cloning generic_flexbe_states"
+    git clone https://github.com/FlexBE/generic_flexbe_states.git -b ros2-devel ../../generic_flexbe_states 
+fi
+
+#run after build
+#ros2 run flexbe_app nwjs_install
+
+
 
 cd ../..
 rosdep update
