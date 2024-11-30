@@ -10,7 +10,7 @@ import os
 import yaml
 from ament_index_python import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import OpaqueFunction, IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import OpaqueFunction, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
@@ -134,6 +134,7 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
+
     # Load controllers
     controller_nodes = []
     for controller in controllers:
@@ -147,7 +148,7 @@ def launch_setup(context, *args, **kwargs):
             ],
         ))
 
-    static_traansfer_frame = Node(
+    static_transfer_frame = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_traansfer_frame',
@@ -160,7 +161,7 @@ def launch_setup(context, *args, **kwargs):
         robot_moveit_common_launch,
         joint_state_broadcaster,
         ros2_control_launch,
-        static_traansfer_frame,
+        static_transfer_frame,
     ] + controller_nodes
 
 

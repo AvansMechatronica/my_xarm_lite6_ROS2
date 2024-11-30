@@ -26,7 +26,7 @@ def launch_setup(context, *args, **kwargs):
     add_gripper = LaunchConfiguration('add_gripper', default=False)
     add_bio_gripper = LaunchConfiguration('add_bio_gripper', default=False)
     dof = LaunchConfiguration('dof', default=6)
-    robot_type = LaunchConfiguration('robot_type', default='lite6')
+    robot_type = LaunchConfiguration('robot_type', default='xarm')
     show_rviz = LaunchConfiguration('show_rviz', default=False)
 
     ros_namespace = LaunchConfiguration('ros_namespace', default='').perform(context)
@@ -35,7 +35,7 @@ def launch_setup(context, *args, **kwargs):
 
     moveit_config_dump = moveit_config_dump.perform(context)
     moveit_config_dict = yaml.load(moveit_config_dump, Loader=yaml.FullLoader) if moveit_config_dump else {}
-    moveit_config_package_name = 'xarm_moveit_config'
+    #moveit_config_package_name = 'my_lite6_moveit_config'
     xarm_type = '{}{}'.format(robot_type.perform(context), dof.perform(context) if robot_type.perform(context) in ('xarm', 'lite') else '')
     
     robot_description = {'robot_description': moveit_config_dict['robot_description']}
@@ -78,7 +78,7 @@ def launch_setup(context, *args, **kwargs):
 
     # rviz with moveit configuration
     if not rviz_config.perform(context):
-        rviz_config_file = PathJoinSubstitution([FindPackageShare(moveit_config_package_name), 'rviz', 'moveit.rviz'])
+        rviz_config_file = PathJoinSubstitution([FindPackageShare("my_lite6_bringup"), 'rviz', 'moveit.rviz'])
     else:
         rviz_config_file = rviz_config
     rviz2_node = Node(

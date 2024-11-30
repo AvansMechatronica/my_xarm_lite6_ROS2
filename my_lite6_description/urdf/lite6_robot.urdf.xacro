@@ -21,6 +21,7 @@
   <xacro:arg name="report_type" default="normal"/>
 
   <xacro:arg name="ros2_control_plugin" default="uf_robot_hardware/UFRobotSystemHardware"/>
+  <!--<xacro:arg name="ros2_control_plugin" default="gazebo_ros2_control/GazeboSystem"/>-->
   <xacro:arg name="ros2_control_params" default=""/>
 
   <xacro:arg name="add_realsense_d435i" default="false"/>
@@ -43,15 +44,16 @@
   <xacro:arg name="baud_checkset" default="true"/>
   <xacro:arg name="default_gripper_baud" default="2000000"/>
   
-  <xacro:arg name="attach_to" default="xarm_link"/>
+ <xacro:arg name="attach_to" default="xarm_link"/>
+ 
   <xacro:arg name="attach_xyz" default="0 0 0"/>
   <xacro:arg name="attach_rpy" default="0 0 0"/>
   <xacro:arg name="mesh_suffix" default="stl"/>
 
   <xacro:arg name="kinematics_suffix" default=""/>
 
-
   <!-- load xarm device -->
+
   <xacro:include filename="$(find xarm_description)/urdf/xarm_device_macro.xacro" />
   <xacro:xarm_device prefix="$(arg prefix)" hw_ns="$(arg hw_ns)" limited="$(arg limited)" 
     effort_control="$(arg effort_control)" velocity_control="$(arg velocity_control)"
@@ -70,7 +72,6 @@
     model1300="$(arg model1300)" attach_to="$(arg attach_to)" attach_xyz="$(arg attach_xyz)" attach_rpy="$(arg attach_rpy)"
     robot_sn="$(arg robot_sn)" use_gazebo_camera="$(arg use_gazebo_camera)" mesh_suffix="$(arg mesh_suffix)" kinematics_suffix="$(arg kinematics_suffix)" />
 
-
   <material name="LightGrey">
       <color rgba="0.7 0.7 0.7 1.0" />
   </material>
@@ -83,7 +84,6 @@
       <color rgba="0.8 0 0 1" />
   </material>
 
-
   <xacro:macro name="cylinder_inertia" params="m r h">
         <inertia  ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
                     iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
@@ -91,9 +91,11 @@
   </xacro:macro>
 
   <xacro:macro name="box_inertia" params="m x y z">
-          <inertia  ixx="${m*(y*y+z*z)/12}" ixy = "0" ixz = "0"
-                    iyy="${m*(x*x+z*z)/12}" iyz = "0"
-                    izz="${m*(x*x+z*z)/12}" />
+      <origin rpy="0 0 0" xyz="${x/2} ${y/2} ${z/2}"/>
+      <mass value="${m}"/>
+      <inertia  ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
+                iyy="${m*(x*x+z*z)/12}" iyz="0"
+                izz="${m*(x*x+y*y)/12}" />
   </xacro:macro>
 
   <xacro:macro name="sphere_inertia" params="m r">
@@ -102,31 +104,35 @@
                     izz="${2*m*r*r/5}" />
   </xacro:macro>
 
+  <link name="world"/>
 
-  <link name="world" />
   <link name="baseplate_link">
     <visual>
-      <origin xyz="0 0 0.0" />
+      <origin xyz="0.0 0.0 0.0" />
       <geometry>
         <box size="0.7 1.1 0.03" />
       </geometry>
       <material name="LightGrey"/>
     </visual>
+
     <inertial>
-      <mass value="10"/>
-      <xacro:box_inertia m="10" x="1.1" y="0.7" z="0.03"/>
+      <!--<origin xyz="0.35 0.5 0.0" />-->
+      <xacro:box_inertia m="20" x="0.7" y="1.1" z="0.03"/>
     </inertial>
     <collision>
+      <origin xyz="0 0 0.0" />
       <geometry>
         <box size="0.7 1.1 0.03" />
       </geometry>
     </collision>
   </link>
 
+
+  <!-- dit is niet juist parent en child zijn omgedraaid -->
   <joint name="baseplate_joint" type="fixed">
     <origin xyz="0 0 -0.015" />
-    <parent link="world" />
-    <child link="baseplate_link" />
+    <child link="world" />
+    <parent link="baseplate_link" />
   </joint>
 
   <link name="mountingplate_link">
@@ -138,15 +144,16 @@
       <material name="red"/>
     </visual>
     <inertial>
-      <mass value="1"/>
       <xacro:box_inertia m="1" x="0.130" y="0.190" z="0.005"/>
     </inertial>
     <collision>
+      <origin xyz="0 0 0.0" />
       <geometry>
         <box size="0.13 0.19 0.005" />
       </geometry>
     </collision>
   </link>
+
 
   <joint name="mountingplate_joint" type="fixed">
     <origin xyz="-0.285 0.0 0.0175" />
@@ -155,7 +162,9 @@
   </joint>
 
 
-  <link name="xarm_link"/>
+  <link name="xarm_link">
+
+  </link >
 
   <joint name="base_plate_to_xarm_joint" type="fixed">
     <origin xyz="-0.0 0.0 0.0025" />
@@ -163,18 +172,28 @@
     <child link="xarm_link" />
   </joint>
 
+  <gazebo reference="baseplate_link">
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+
+  <gazebo reference="mountingplate_link">
+    <material>Gazebo/Red</material>
+  </gazebo>
 
   <!-- tool center point -->
-
+<!--
   <link name="tcp_link" />
   <joint name="tool_link" type="fixed">
     <parent link="link_eef" />
     <child link="tcp_link" />
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
-
-<!--
-  <xacro:include filename="$(find xarm_description)/urdf/gripper/lite_gripper.urdf.xacro" />
-  <xacro:uflite_gripper_urdf prefix="$(arg prefix)" attach_to='link_eef' />
 -->
+
+    <gazebo reference="world">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+
+
+
 </robot>

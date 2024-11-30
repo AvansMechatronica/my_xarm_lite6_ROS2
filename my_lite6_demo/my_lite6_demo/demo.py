@@ -43,11 +43,11 @@ def main():
     move_group_helper = MovegroupHelper(node, joint_names, base_link_name, end_effector_name, group_name)
 
     # Spin the node in background thread(s) and wait a bit for initialization
-    #executor = rclpy.executors.MultiThreadedExecutor(2)
-    #executor.add_node(node)
-    #executor_thread = Thread(target=executor.spin, daemon=True, args=())
-    #executor_thread.start()
-    #node.create_rate(1.0).sleep()
+    executor = rclpy.executors.MultiThreadedExecutor(2)
+    executor.add_node(node)
+    executor_thread = Thread(target=executor.spin, daemon=True, args=())
+    executor_thread.start()
+    node.create_rate(1.0).sleep()
 
 
     for joint_state in joint_states:
