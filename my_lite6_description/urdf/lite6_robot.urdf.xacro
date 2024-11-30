@@ -53,7 +53,6 @@
   <xacro:arg name="kinematics_suffix" default=""/>
 
   <!-- load xarm device -->
-
   <xacro:include filename="$(find xarm_description)/urdf/xarm_device_macro.xacro" />
   <xacro:xarm_device prefix="$(arg prefix)" hw_ns="$(arg hw_ns)" limited="$(arg limited)" 
     effort_control="$(arg effort_control)" velocity_control="$(arg velocity_control)"
@@ -91,7 +90,7 @@
   </xacro:macro>
 
   <xacro:macro name="box_inertia" params="m x y z">
-      <origin rpy="0 0 0" xyz="${x/2} ${y/2} ${z/2}"/>
+      <origin rpy="0 0 0" xyz="0 0 ${z/2}"/>
       <mass value="${m}"/>
       <inertia  ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
                 iyy="${m*(x*x+z*z)/12}" iyz="0"
@@ -127,12 +126,11 @@
     </collision>
   </link>
 
-
   <!-- dit is niet juist parent en child zijn omgedraaid -->
   <joint name="baseplate_joint" type="fixed">
-    <origin xyz="0 0 -0.015" />
-    <child link="world" />
-    <parent link="baseplate_link" />
+    <origin xyz="0 0 0.015" />
+    <parent link="world" />
+    <child link="baseplate_link" />
   </joint>
 
   <link name="mountingplate_link">
@@ -154,18 +152,14 @@
     </collision>
   </link>
 
-
   <joint name="mountingplate_joint" type="fixed">
     <origin xyz="-0.285 0.0 0.0175" />
     <parent link="baseplate_link" />
     <child link="mountingplate_link" />
   </joint>
 
-
   <link name="xarm_link">
-
   </link >
-
   <joint name="base_plate_to_xarm_joint" type="fixed">
     <origin xyz="-0.0 0.0 0.0025" />
     <parent link="mountingplate_link" />
@@ -179,6 +173,8 @@
   <gazebo reference="mountingplate_link">
     <material>Gazebo/Red</material>
   </gazebo>
+
+
 
   <!-- tool center point -->
 <!--

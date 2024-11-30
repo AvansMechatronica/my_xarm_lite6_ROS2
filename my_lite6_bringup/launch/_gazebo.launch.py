@@ -71,7 +71,7 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
         arguments=[
             '-topic', 'robot_description',
-            '-entity', 'xarm',
+            '-entity', 'lite6_robot',
         ],
         parameters=[{'use_sim_time': True}],
     )
