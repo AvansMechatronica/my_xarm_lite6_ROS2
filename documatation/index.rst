@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to my ufactory lite6
-============================
+Welcome to my uFactory lite6 workshop
+=====================================
 
-**ROS2 Industrial Workshop** is een workshop voor Avans studenten die aan de slag willen met een Ufactory lite6 robot
+**uFacory lite6 workshop** is een workshop voor Avans studenten die aan de slag willen met een Ufactory lite6 robot
 
 .. note::
    This project is under active development.

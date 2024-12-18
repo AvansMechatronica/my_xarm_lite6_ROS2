@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Avans: ROS2 Industrial'
+project = 'Avans: my Ufactory lite6 workshop'
 copyright = 'Avans ATIx: Gerard Harkema'
 author = 'Gerard Harkema'
 release = '0.1'
